@@ -45,3 +45,36 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+
+  terraform-staging:
+    name: Terraform Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: terraform-dev
+    defaults:
+      run:
+        working-directory: envs/staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
