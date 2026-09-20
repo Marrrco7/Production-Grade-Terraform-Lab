@@ -7,6 +7,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
 
 permissions:
   id-token: write
@@ -18,6 +28,7 @@ jobs:
     name: Terraform Dev
     runs-on: ubuntu-latest
     environment: dev
+    if: github.event_name != 'workflow_dispatch' || inputs.environment == 'dev'
     defaults:
       run:
         working-directory: envs/dev
@@ -43,13 +54,14 @@ jobs:
         run: terraform plan -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
 
   terraform-staging:
     name: Terraform Staging
     runs-on: ubuntu-latest
     environment: staging
+    if: github.event_name != 'workflow_dispatch' || inputs.environment == 'staging'
     needs: terraform-dev
     defaults:
       run:
@@ -76,5 +88,5 @@ jobs:
         run: terraform plan -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
