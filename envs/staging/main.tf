@@ -11,12 +11,14 @@ terraform {
     storage_account_name = "tfstatemarco"
     container_name       = "tfstate"
     key                  = "staging.terraform.tfstate"
+    use_oidc             = true
   }
 }
 
 provider "azurerm" {
   features {}
   subscription_id = "d5efde2d-2884-4244-8e96-53367321279e"
+  use_oidc        = true
 }
 
 resource "azurerm_resource_group" "lab" {
