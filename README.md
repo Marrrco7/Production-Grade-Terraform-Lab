@@ -1,19 +1,38 @@
 # Production-Grade Terraform Lab
 
-This is a hands-on Terraform project built to learn and practice infrastructure as code at a production level. It provisions real Azure infrastructure across two isolated environments — dev and staging — using reusable modules, remote state management, and fully automated CI/CD pipelines.
+A hands-on Terraform project provisioning real Azure infrastructure across two isolated environments — dev and staging — using reusable modules, remote state, and fully automated CI/CD pipelines.
 
-The goal was not just to get something running, but to build it the way a real engineering team would: clean module boundaries, no hardcoded values, state that lives in the cloud, and a pipeline that no one has to trigger manually on a normal day.
+Built to cover every core Terraform concept a real engineering team uses day-to-day.
 
 ---
 
 ## What's Inside
 
-The infrastructure is broken into reusable modules that both environments share:
+- **Networking module** — Virtual Network, multiple subnets driven by `for_each`, and a Network Security Group with security rules generated via `dynamic` blocks
+- **Key Vault module** — secrets management with `prevent_destroy` to guard against accidental deletion
+- **Two environments** — dev and staging, each with isolated state and independent pipelines
+- **CI/CD** — GitHub Actions with OIDC authentication (no stored secrets) and a reusable workflow shared across environments
 
-- **Networking** — a Virtual Network and Subnet
-- **Key Vault** — secrets management
+---
 
-Each environment (dev and staging) has its own configuration, its own state file, and deploys completely independently. Destroying staging won't touch dev. Changing dev won't affect staging.
+## Concepts Covered
+
+| Concept | Where |
+|---|---|
+| Providers, resources, init / plan / apply | Throughout |
+| Remote state with Azure Blob Storage | `backend "azurerm"` in each env |
+| State locking (blob lease) | Automatic on every operation |
+| `terraform import` | Used during env restructuring |
+| `moved {}` block | Rename resources without destroy |
+| Variables, outputs, locals | Every module |
+| `terraform.tfvars` (gitignored) | Per-environment secret values |
+| Modules with explicit variable passing | `modules/networking`, `modules/keyvault` |
+| `for_each` with `map(object)` | Multiple subnets from a variable map |
+| `dynamic` blocks | NSG security rules driven from a list |
+| `lifecycle` rules (`prevent_destroy`, `ignore_changes`) | Key Vault and VNet |
+| Multi-environment structure with isolated state | `envs/dev`, `envs/staging` |
+| Reusable GitHub Actions workflow | Single workflow, called per environment |
+| OIDC authentication | Federated credentials, no stored secrets |
 
 ---
 
@@ -22,11 +41,11 @@ Each environment (dev and staging) has its own configuration, its own state file
 ```
 .
 ├── modules/
-│   ├── networking/
-│   └── keyvault/
+│   ├── networking/       # VNet, subnets (for_each), NSG (dynamic rules)
+│   └── keyvault/         # Key Vault with prevent_destroy
 ├── envs/
-│   ├── dev/
-│   └── staging/
+│   ├── dev/              # Auto-deploys on push to main
+│   └── staging/          # Promoted manually via workflow_dispatch
 └── .github/
     └── workflows/
         ├── terraform-reusable.yml
@@ -36,34 +55,12 @@ Each environment (dev and staging) has its own configuration, its own state file
 
 ---
 
-## Environments & Pipelines
+## What a Production Setup Would Also Have
 
-Dev deploys automatically on every push to `main` and plans on every pull request. Staging is promoted manually — you trigger it from the Actions tab when you're ready.
+This lab covers the core. A real team would typically add:
 
-Both pipelines share a single reusable workflow. The Terraform logic lives in one place; each environment just calls it with its own inputs.
-
-Authentication to Azure uses OIDC — no passwords or keys stored anywhere. GitHub proves its identity to Azure cryptographically, and Azure issues a short-lived token in return.
-
----
-
-## Running Locally
-
-```bash
-az login
-cd envs/dev
-terraform init
-terraform plan
-terraform apply
-```
-
-You'll need a `terraform.tfvars` file with your tenant ID, location, and environment name. That file is gitignored — it never touches the repo.
-
----
-
-## Required GitHub Secrets
-
-| Secret | What it is |
-|---|---|
-| `AZURE_CLIENT_ID` | The app registration that GitHub authenticates as |
-| `AZURE_TENANT_ID` | Your Azure directory |
-| `AZURE_SUBSCRIPTION_ID` | The subscription to deploy into |
+- **`data` sources** — read existing infrastructure instead of hardcoding IDs
+- **Variable validation blocks** — reject bad inputs before plan runs
+- **Drift detection** — scheduled pipeline that plans and alerts on unexpected changes
+- **Module versioning** — private registry with semver, environments pinned to specific versions
+- **Policy-as-code** — Sentinel or OPA to enforce guardrails (e.g. no public IPs, mandatory tags)
