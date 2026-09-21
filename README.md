@@ -10,7 +10,7 @@ Built to cover every core Terraform concept a real engineering team uses day-to-
 
 - **Networking module** — Virtual Network, multiple subnets driven by `for_each`, and a Network Security Group with security rules generated via `dynamic` blocks
 - **Key Vault module** — secrets management with `prevent_destroy` to guard against accidental deletion
-- **Two environments** — dev and staging, each with isolated state and independent pipelines
+- **Three environments** — dev, staging, and prod, each with isolated state and independent pipelines
 - **CI/CD** — GitHub Actions with OIDC authentication (no stored secrets) and a reusable workflow shared across environments
 
 ---
@@ -30,7 +30,7 @@ Built to cover every core Terraform concept a real engineering team uses day-to-
 | `for_each` with `map(object)` | Multiple subnets from a variable map |
 | `dynamic` blocks | NSG security rules driven from a list |
 | `lifecycle` rules (`prevent_destroy`, `ignore_changes`) | Key Vault and VNet |
-| Multi-environment structure with isolated state | `envs/dev`, `envs/staging` |
+| Multi-environment structure with isolated state | `envs/dev`, `envs/staging`, `envs/prod` |
 | Reusable GitHub Actions workflow | Single workflow, called per environment |
 | OIDC authentication | Federated credentials, no stored secrets |
 
@@ -45,12 +45,14 @@ Built to cover every core Terraform concept a real engineering team uses day-to-
 │   └── keyvault/         # Key Vault with prevent_destroy
 ├── envs/
 │   ├── dev/              # Auto-deploys on push to main
-│   └── staging/          # Promoted manually via workflow_dispatch
+│   ├── staging/          # Promoted manually via workflow_dispatch
+│   └── prod/             # Promoted manually via workflow_dispatch
 └── .github/
     └── workflows/
         ├── terraform-reusable.yml
         ├── terraform-dev.yml
-        └── terraform-staging.yml
+        ├── terraform-staging.yml
+        └── terraform-prod.yml
 ```
 
 ---
