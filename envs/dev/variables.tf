@@ -14,3 +14,15 @@ variable "tenant_id" {
   type        = string
   description = "Azure AD tenant ID"
 }
+
+variable "subnets" {
+  type = map(object({
+    address_prefix = string
+  }))
+  description = "Map of subnets to create"
+  default = {
+    app = {
+      address_prefix = "10.0.1.0/24"
+    }
+  }
+}

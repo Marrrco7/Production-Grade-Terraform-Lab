@@ -1,13 +1,18 @@
+locals {
+  name_prefix = "terraform-lab-${var.environment}"
+}
 resource "azurerm_virtual_network" "main" {
-  name                = "terraform-lab-${var.environment}-vnet"
+  name                = "${local.name_prefix}-vnet"
   location            = var.location
   resource_group_name = var.resource_group_name
   address_space       = ["10.0.0.0/16"]
 }
 
 resource "azurerm_subnet" "main" {
-  name                 = "terraform-lab-${var.environment}-subnet"
+  for_each = var.subnets
+
+  name                 = "${local.name_prefix}-${each.key}-subnet"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = [each.value.address_prefix]
 }

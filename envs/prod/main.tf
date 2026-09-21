@@ -29,6 +29,7 @@ module "networking" {
   location            = var.location
   environment         = var.environment
   resource_group_name = azurerm_resource_group.lab.name
+  subnets             = var.subnets
 }
 
 module "keyvault" {
